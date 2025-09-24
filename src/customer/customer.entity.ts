@@ -1,8 +1,8 @@
 import { Entity, Column, PrimaryGeneratedColumn, CreateDateColumn } from 'typeorm';
 
-@Entity({ name: 'tb_customers' })
+@Entity({ name: 'customers' })
 export class Customer {
-    @PrimaryGeneratedColumn()
+    @PrimaryGeneratedColumn({ name: 'id_customer' })
     idCustomer: number;
 
     @Column()
@@ -11,15 +11,12 @@ export class Customer {
     @Column()
     contact: string;
 
-    @Column({ type: 'decimal', precision: 10, scale: 2, default: 0 })
-    debt: number;
-
-    @Column()
+    @Column({ name: 'is_active' })
     isActive: boolean;
 
-    @Column()
+    @Column({ name: 'dead_line' })
     deadLine: Date;
 
-    @CreateDateColumn({ type: 'timestamp', default: () => 'CURRENT_TIMESTAMP(6)' })
+    @CreateDateColumn({ name: 'created_at', type: 'timestamp', default: () => 'CURRENT_TIMESTAMP(6)' })
     createdAt: Date;
 }
