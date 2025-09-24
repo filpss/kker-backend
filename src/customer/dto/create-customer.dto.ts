@@ -1,5 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { IsString, IsNotEmpty, IsNumber, IsBoolean, IsDateString, MinLength } from 'class-validator';
+import { IsString, IsNotEmpty, IsBoolean, IsDateString, MinLength } from 'class-validator';
 
 export class CreateCustomerDto {
     @ApiProperty({
@@ -18,13 +18,6 @@ export class CreateCustomerDto {
     @IsString()
     @IsNotEmpty()
     contact: string;
-
-    @ApiProperty({
-        description: 'Valor que o cliente ainda precisa pagar (inteiro ou float).',
-        example: 593.29,
-    })
-    @IsNumber()
-    debt: number;
 
     @ApiProperty({
         description: 'Informa se o cliente está ou não ativo no sistema (true ou false).',
