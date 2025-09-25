@@ -19,7 +19,7 @@ export class CustomerController {
     }
 
     @Post()
-    async create(@Body() createCustomerDto: CreateCustomerDto): Promise<Customer> {
+    create(@Body() createCustomerDto: CreateCustomerDto): Promise<Customer> {
         return this.customerService.create(createCustomerDto);
     }
 
@@ -29,13 +29,13 @@ export class CustomerController {
     }
 
     @Patch(':id')
-    async edit(@Param('id') idCustomer: number, @Body() editCustomerDto: EditCustomerDto): Promise<Customer> {
+    edit(@Param('id') idCustomer: number, @Body() editCustomerDto: EditCustomerDto): Promise<Customer> {
         return this.customerService.edit(idCustomer, editCustomerDto);
     }
 
     @Delete(':id')
     @HttpCode(HttpStatus.NO_CONTENT)
-    async remove(@Param('id') customerId: number): Promise<void> {
-        return await this.customerService.remove(customerId);
+    remove(@Param('id') customerId: number): Promise<void> {
+        return this.customerService.remove(customerId);
     }
 }

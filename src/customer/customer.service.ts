@@ -12,14 +12,15 @@ export class CustomerService {
         private customerRepository: Repository<Customer>,
     ) { }
 
-    findAll(): Promise<Customer[]> {
-        return this.customerRepository.find();
+    async findAll(): Promise<Customer[]> {
+        return await this.customerRepository.find();
     }
 
-    async findOne(idCustomer: number): Promise<Customer> {
-        const customer = await this.customerRepository.findOneBy({ idCustomer });
+    async findOne(id: number): Promise<Customer> {
+        const customer = await this.customerRepository.findOneBy({ id });
+        console.log(typeof (customer));
         if (!customer) {
-            throw new NotFoundException(`Cliente de ID ${idCustomer} não encontrado`);
+            throw new NotFoundException(`Cliente de ID ${id} não encontrado`);
         }
         return customer;
     }
@@ -37,28 +38,27 @@ export class CustomerService {
 
         const newCustomer = this.customerRepository.create(createCustomerDto);
 
-        return this.customerRepository.save(newCustomer);
+        return await this.customerRepository.save(newCustomer);
     }
 
-    async edit(idCustomer: number, editCustomerDto: EditCustomerDto): Promise<Customer> {
+    async edit(id: number, editCustomerDto: EditCustomerDto): Promise<Customer> {
         const customer = await this.customerRepository.preload({
-            idCustomer,
+            id,
             ...editCustomerDto
         })
 
         if (!customer) {
-            throw new NotFoundException(`Cliente de ID ${idCustomer} não encontrado`);
+            throw new NotFoundException(`Cliente de ID ${id} não encontrado`);
         }
 
-        await this.customerRepository.save(customer);
-        return customer;
+        return await this.customerRepository.save(customer);
     }
 
-    async remove(idCustomer: number): Promise<void> {
-        const customer = await this.customerRepository.findOneBy({ idCustomer });
+    async remove(id: number): Promise<void> {
+        const customer = await this.customerRepository.findOneBy({ id });
         if (!customer) {
-            throw new NotFoundException(`Cliente de ID ${idCustomer} não encontrado`);
+            throw new NotFoundException(`Cliente de ID ${id} não encontrado`);
         }
-        await this.customerRepository.delete(idCustomer);
+        await this.customerRepository.delete(id);
     }
 }
