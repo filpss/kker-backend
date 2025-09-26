@@ -50,7 +50,7 @@ export class SaleService {
 
         var sale = await this.salesRepository.preload({
             id,
-            ...editSaleDto,
+            ...saleData,
         });
 
         if (!sale) {
