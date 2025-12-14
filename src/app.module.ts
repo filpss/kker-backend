@@ -9,6 +9,7 @@ import { PaymentModule } from './payment/payment.module';
 import { Sale } from './sale/sale.entity';
 import { Payment } from './payment/payment.entity';
 import { BillingModule } from './billing/billing.module';
+import { ReportModule } from './report/report.module';
 
 @Module({
   imports: [
@@ -34,7 +35,8 @@ import { BillingModule } from './billing/billing.module';
     CustomerModule,
     SaleModule,
     PaymentModule,
-    BillingModule
+    BillingModule,
+    ReportModule
   ],
   controllers: [],
   providers: [],
