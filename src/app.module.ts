@@ -16,8 +16,8 @@ import { Payment } from './payment/payment.entity';
     }),
     TypeOrmModule.forRoot({
       type: 'postgres',
-      host: 'localhost',
-      port: 5431,
+      host: process.env.DB_HOST || 'database',
+      port: parseInt(process.env.DB_PORT || '5432'),
       username: process.env.POSTGRES_USER,
       password: process.env.POSTGRES_PASSWORD,
       database: process.env.POSTGRES_DB,
