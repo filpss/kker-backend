@@ -9,6 +9,12 @@ declare const module: any;
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
 
+  app.enableCors({
+    origin: ['http://localhost:4200', 'http://127.0.0.1:4200'],
+    credentials: true,
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
+  });
+
   const config = new DocumentBuilder()
     .setTitle('KKER System')
     .setDescription('KKER System API description')
@@ -24,11 +30,12 @@ async function bootstrap() {
   const documentFactory = () => SwaggerModule.createDocument(app, config);
   SwaggerModule.setup('docs', app, documentFactory);
 
-  await app.listen(process.env.PORT ?? 3000);
+  await app.listen(3000);
 
   if (module.hot) {
     module.hot.accept();
     module.hot.dispose(() => app.close());
   }
 }
+
 bootstrap();
