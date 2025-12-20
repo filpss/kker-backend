@@ -6,7 +6,8 @@ import {
     CustomerReportData,
     FinancialSummary,
     SaleReportItem,
-    PaymentReportItem
+    PaymentReportItem,
+    InstallmentReportItem
 } from './dto/customer-report.dto';
 
 @Injectable()
@@ -41,7 +42,7 @@ export class ReportService {
     private async fetchCustomerWithRelations(customerId: number): Promise<Customer> {
         const customer = await this.customerRepository.findOne({
             where: { id: customerId },
-            relations: ['sales', 'sales.payments']
+            relations: ['sales', 'sales.installments', 'sales.installments.payment']
         });
 
         if (!customer) {
@@ -57,15 +58,39 @@ export class ReportService {
         }
 
         return customer.sales
-            .map(sale => ({
-                id: sale.id,
-                description: sale.description || '-',
-                value: Number(sale.value),
-                saleDate: sale.saleDate,
-                paymentsCount: sale.payments?.length || 0,
-                totalPaid: this.sumPayments(sale.payments)
-            }))
+            .map(sale => {
+                const installments = sale.installments || [];
+                const paidInstallments = installments.filter(i => i.isPaid).length;
+                const totalPaid = installments
+                    .filter(i => i.payment)
+                    .reduce((sum, i) => sum + Number(i.payment?.value || 0), 0);
+
+                return {
+                    id: sale.id,
+                    description: sale.description || '-',
+                    value: Number(sale.value),
+                    saleDate: sale.saleDate,
+                    installmentsCount: sale.installmentsCount,
+                    paidInstallments,
+                    totalPaid,
+                    installments: this.mapInstallments(installments)
+                };
+            })
             .sort((a, b) => new Date(b.saleDate).getTime() - new Date(a.saleDate).getTime());
+    }
+
+    private mapInstallments(installments: any[]): InstallmentReportItem[] {
+        return installments
+            .map(inst => ({
+                id: inst.id,
+                installmentNumber: inst.installmentNumber,
+                value: Number(inst.value),
+                dueDate: inst.dueDate,
+                isPaid: inst.isPaid,
+                paymentDate: inst.payment?.paymentDate || null,
+                paymentValue: inst.payment ? Number(inst.payment.value) : null
+            }))
+            .sort((a, b) => a.installmentNumber - b.installmentNumber);
     }
 
     private mapPaymentsHistory(customer: Customer): PaymentReportItem[] {
@@ -76,15 +101,19 @@ export class ReportService {
         const allPayments: PaymentReportItem[] = [];
 
         for (const sale of customer.sales) {
-            if (sale.payments && sale.payments.length > 0) {
-                for (const payment of sale.payments) {
-                    allPayments.push({
-                        id: payment.id,
-                        description: payment.description || '-',
-                        value: Number(payment.value),
-                        paymentDate: payment.paymentDate,
-                        saleDescription: sale.description || `Venda #${sale.id}`
-                    });
+            if (sale.installments && sale.installments.length > 0) {
+                for (const installment of sale.installments) {
+                    if (installment.payment) {
+                        allPayments.push({
+                            id: installment.payment.id,
+                            description: installment.payment.description || '-',
+                            value: Number(installment.payment.value),
+                            paymentDate: installment.payment.paymentDate,
+                            saleDescription: sale.description || `Venda #${sale.id}`,
+                            installmentNumber: installment.installmentNumber,
+                            installmentsTotal: sale.installmentsCount
+                        });
+                    }
                 }
             }
         }
@@ -96,26 +125,32 @@ export class ReportService {
 
     private calculateFinancialSummary(customer: Customer): FinancialSummary {
         const sales = customer.sales || [];
+
+        let totalInstallments = 0;
+        let paidInstallments = 0;
+        let totalPaid = 0;
+
+        for (const sale of sales) {
+            const installments = sale.installments || [];
+            totalInstallments += installments.length;
+            paidInstallments += installments.filter(i => i.isPaid).length;
+            totalPaid += installments
+                .filter(i => i.payment)
+                .reduce((sum, i) => sum + Number(i.payment?.value || 0), 0);
+        }
+
         const totalSpent = sales.reduce((sum, sale) => sum + Number(sale.value), 0);
-        const totalPaid = sales.reduce((sum, sale) => sum + this.sumPayments(sale.payments), 0);
-        const paymentsCount = sales.reduce(
-            (count, sale) => count + (sale.payments?.length || 0),
-            0
-        );
+        const paymentsCount = paidInstallments;
 
         return {
             totalSpent,
             totalPaid,
             outstandingBalance: Math.max(0, totalSpent - totalPaid),
             salesCount: sales.length,
-            paymentsCount
+            paymentsCount,
+            totalInstallments,
+            paidInstallments,
+            pendingInstallments: totalInstallments - paidInstallments
         };
-    }
-
-    private sumPayments(payments: { value: number }[] | undefined): number {
-        if (!payments || payments.length === 0) {
-            return 0;
-        }
-        return payments.reduce((sum, payment) => sum + Number(payment.value), 0);
     }
 }

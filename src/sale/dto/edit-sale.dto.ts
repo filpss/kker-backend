@@ -1,36 +1,39 @@
-import { ApiProperty } from '@nestjs/swagger';
-import { IsString, IsNotEmpty, IsDateString, IsNumber } from 'class-validator';
+import { ApiPropertyOptional } from '@nestjs/swagger';
+import { IsString, IsNotEmpty, IsDateString, IsNumber, IsOptional } from 'class-validator';
 
 export class EditSaleDto {
-    @ApiProperty({
+    @ApiPropertyOptional({
         description: 'O ID do cliente',
         example: 1
     })
     @IsNumber()
     @IsNotEmpty()
-    idCustomer: number;
+    @IsOptional()
+    idCustomer?: number;
 
-    @ApiProperty({
-        description: 'O valor total da venda.',
-        example: '250'
+    @ApiPropertyOptional({
+        description: 'O valor total da venda',
+        example: 250
     })
-    @IsNotEmpty()
     @IsNumber()
-    value: number;
+    @IsNotEmpty()
+    @IsOptional()
+    value?: number;
 
-    @ApiProperty({
+    @ApiPropertyOptional({
         description: 'Descrição resumida sobre a venda',
         example: 'CALÇA JEANS CLARA T38'
     })
     @IsString()
     @IsNotEmpty()
-    description: string;
+    @IsOptional()
+    description?: string;
 
-    @ApiProperty({
-        description: 'Data em que a venda foi realizada (No formato YYYY-MM-DD).',
+    @ApiPropertyOptional({
+        description: 'Data em que a venda foi realizada (No formato YYYY-MM-DD)',
         example: '2025-10-31'
     })
     @IsDateString()
-    @IsNotEmpty()
-    saleDate: Date;
+    @IsOptional()
+    saleDate?: Date;
 }
