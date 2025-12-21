@@ -1,5 +1,5 @@
 import { ApiPropertyOptional } from '@nestjs/swagger';
-import { IsString, IsNotEmpty, IsDateString, IsNumber, IsOptional } from 'class-validator';
+import { IsString, IsNotEmpty, IsDateString, IsNumber, IsOptional, Min } from 'class-validator';
 
 export class EditSaleDto {
     @ApiPropertyOptional({
@@ -36,4 +36,13 @@ export class EditSaleDto {
     @IsDateString()
     @IsOptional()
     saleDate?: Date;
+
+    @ApiPropertyOptional({
+        description: 'Quantidade de parcelas combinadas com o cliente (apenas informativo)',
+        example: 4
+    })
+    @IsNumber()
+    @Min(1)
+    @IsOptional()
+    installmentsCount?: number;
 }

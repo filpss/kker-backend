@@ -1,14 +1,14 @@
-import { Entity, Column, PrimaryGeneratedColumn, CreateDateColumn, JoinColumn, OneToOne } from 'typeorm';
-import { Installment } from '../sale/installment.entity';
+import { Entity, Column, PrimaryGeneratedColumn, CreateDateColumn, JoinColumn, ManyToOne } from 'typeorm';
+import { Sale } from '../sale/sale.entity';
 
 @Entity({ name: 'payments' })
 export class Payment {
     @PrimaryGeneratedColumn()
     id: number;
 
-    @OneToOne(() => Installment, (installment) => installment.payment)
-    @JoinColumn({ name: 'installment_id' })
-    installment: Installment;
+    @ManyToOne(() => Sale, (sale) => sale.payments)
+    @JoinColumn({ name: 'sale_id' })
+    sale: Sale;
 
     @Column({ type: 'decimal', precision: 10, scale: 2 })
     value: number;

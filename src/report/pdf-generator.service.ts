@@ -165,7 +165,7 @@ export class PdfGeneratorService {
             cardHeight,
             'Total Pago',
             this.formatCurrency(data.financialSummary.totalPaid),
-            `${data.financialSummary.paidInstallments}/${data.financialSummary.totalInstallments} parcela(s)`,
+            `${data.financialSummary.paymentsCount} pagamento(s)`,
             ['#11998e', '#38ef7d']
         );
 
@@ -181,7 +181,7 @@ export class PdfGeneratorService {
             cardHeight,
             'Saldo Devedor',
             this.formatCurrency(data.financialSummary.outstandingBalance),
-            `${data.financialSummary.pendingInstallments} parcela(s) pendente(s)`,
+            data.financialSummary.outstandingBalance === 0 ? 'Quitado' : 'Pendente',
             balanceColors
         );
 
@@ -241,12 +241,11 @@ export class PdfGeneratorService {
         }
 
         const columns = [
-            { header: 'Data', width: 60, align: 'left' as const },
-            { header: 'Descrição', width: 160, align: 'left' as const },
-            { header: 'Valor', width: 80, align: 'right' as const },
-            { header: 'Parcelas', width: 65, align: 'center' as const },
-            { header: 'Pago', width: 80, align: 'right' as const },
-            { header: 'Status', width: 70, align: 'center' as const }
+            { header: 'Data', width: 70, align: 'left' as const },
+            { header: 'Descrição', width: 180, align: 'left' as const },
+            { header: 'Valor', width: 90, align: 'right' as const },
+            { header: 'Parcelas', width: 70, align: 'center' as const },
+            { header: 'Pago', width: 105, align: 'right' as const }
         ];
 
         this.drawTableHeader(doc, columns);
@@ -254,26 +253,15 @@ export class PdfGeneratorService {
         sales.forEach((sale, index) => {
             this.checkPageBreak(doc, 25);
 
-            const statusText = sale.paidInstallments === sale.installmentsCount
-                ? 'Quitado'
-                : `${sale.paidInstallments}/${sale.installmentsCount}`;
-
             const rowData = [
                 this.formatDate(sale.saleDate),
-                this.truncateText(sale.description, 30),
+                this.truncateText(sale.description, 35),
                 this.formatCurrency(sale.value),
                 `${sale.installmentsCount}x`,
-                this.formatCurrency(sale.totalPaid),
-                statusText
+                this.formatCurrency(sale.totalPaid)
             ];
 
-            const statusColor = sale.paidInstallments === sale.installmentsCount
-                ? this.colors.success
-                : sale.paidInstallments > 0
-                    ? this.colors.warning
-                    : this.colors.danger;
-
-            this.drawTableRow(doc, columns, rowData, index % 2 === 0, 5, statusColor);
+            this.drawTableRow(doc, columns, rowData, index % 2 === 0);
         });
 
         doc.moveDown(1);
@@ -302,11 +290,10 @@ export class PdfGeneratorService {
         }
 
         const columns = [
-            { header: 'Data', width: 60, align: 'left' as const },
-            { header: 'Referente a', width: 140, align: 'left' as const },
-            { header: 'Parcela', width: 55, align: 'center' as const },
-            { header: 'Descrição', width: 140, align: 'left' as const },
-            { header: 'Valor', width: 80, align: 'right' as const }
+            { header: 'Data', width: 70, align: 'left' as const },
+            { header: 'Referente a', width: 180, align: 'left' as const },
+            { header: 'Descrição', width: 175, align: 'left' as const },
+            { header: 'Valor', width: 90, align: 'right' as const }
         ];
 
         this.drawTableHeader(doc, columns);
@@ -315,9 +302,8 @@ export class PdfGeneratorService {
             this.checkPageBreak(doc, 25);
             const rowData = [
                 this.formatDate(payment.paymentDate),
-                this.truncateText(payment.saleDescription, 25),
-                `${payment.installmentNumber}/${payment.installmentsTotal}`,
-                this.truncateText(payment.description, 25),
+                this.truncateText(payment.saleDescription, 35),
+                this.truncateText(payment.description, 35),
                 this.formatCurrency(payment.value)
             ];
             this.drawTableRow(doc, columns, rowData, index % 2 === 0);
@@ -355,9 +341,7 @@ export class PdfGeneratorService {
         doc: any,
         columns: { header: string; width: number; align: 'left' | 'center' | 'right' }[],
         data: string[],
-        isEven: boolean,
-        statusColumnIndex?: number,
-        statusColor?: string
+        isEven: boolean
     ): void {
         const rowHeight = 22;
         const startY = doc.y;
@@ -369,16 +353,11 @@ export class PdfGeneratorService {
         }
 
         doc.fontSize(9)
-            .font('Helvetica');
+            .font('Helvetica')
+            .fillColor(this.colors.primary);
 
         let xPos = 45;
         data.forEach((text, i) => {
-            if (statusColumnIndex !== undefined && i === statusColumnIndex && statusColor) {
-                doc.fillColor(statusColor);
-            } else {
-                doc.fillColor(this.colors.primary);
-            }
-
             doc.text(text, xPos, startY + 6, {
                 width: columns[i].width - 10,
                 align: columns[i].align

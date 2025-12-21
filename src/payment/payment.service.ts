@@ -1,9 +1,9 @@
-import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
-import { Repository, DataSource } from 'typeorm';
+import { Injectable, NotFoundException } from '@nestjs/common';
+import { Repository } from 'typeorm';
 import { Payment } from './payment.entity';
 import { PaymentDto } from './dto/payment.dto';
 import { EditPaymentDto } from './dto/edit-payment.dto';
-import { Installment } from '../sale/installment.entity';
+import { Sale } from '../sale/sale.entity';
 import { InjectRepository } from '@nestjs/typeorm';
 
 @Injectable()
@@ -11,67 +11,41 @@ export class PaymentService {
     constructor(
         @InjectRepository(Payment)
         private paymentRepository: Repository<Payment>,
-        @InjectRepository(Installment)
-        private installmentRepository: Repository<Installment>,
-        private dataSource: DataSource
+        @InjectRepository(Sale)
+        private saleRepository: Repository<Sale>,
     ) { }
 
     async getAll(): Promise<Payment[]> {
         return await this.paymentRepository.find({
-            relations: ['installment', 'installment.sale', 'installment.sale.customer']
+            relations: ['sale', 'sale.customer']
         });
     }
 
     async create(paymentDto: PaymentDto): Promise<Payment> {
-        const { idInstallment, ...paymentData } = paymentDto;
+        const { idSale, ...paymentData } = paymentDto;
 
-        const installment = await this.installmentRepository.findOne({
-            where: { id: idInstallment },
-            relations: ['payment', 'sale']
+        const sale = await this.saleRepository.findOne({
+            where: { id: idSale },
+            relations: ['customer']
         });
 
-        if (!installment) {
-            throw new NotFoundException(`Parcela de ID ${idInstallment} não encontrada`);
+        if (!sale) {
+            throw new NotFoundException(`Venda de ID ${idSale} não encontrada`);
         }
 
-        if (installment.isPaid) {
-            throw new BadRequestException(`A parcela ${installment.installmentNumber} já foi paga`);
-        }
+        const payment = this.paymentRepository.create({
+            ...paymentData,
+            sale
+        });
 
-        if (installment.payment) {
-            throw new BadRequestException(`A parcela ${installment.installmentNumber} já possui um pagamento registrado`);
-        }
-
-        const queryRunner = this.dataSource.createQueryRunner();
-        await queryRunner.connect();
-        await queryRunner.startTransaction();
-
-        try {
-            const payment = queryRunner.manager.create(Payment, {
-                ...paymentData,
-                installment
-            });
-
-            const savedPayment = await queryRunner.manager.save(payment);
-
-            installment.isPaid = true;
-            await queryRunner.manager.save(installment);
-
-            await queryRunner.commitTransaction();
-
-            return await this.getById(savedPayment.id) as Payment;
-        } catch (error) {
-            await queryRunner.rollbackTransaction();
-            throw error;
-        } finally {
-            await queryRunner.release();
-        }
+        const savedPayment = await this.paymentRepository.save(payment);
+        return await this.getById(savedPayment.id) as Payment;
     }
 
     async edit(id: number, editPaymentDto: EditPaymentDto): Promise<Payment> {
         const payment = await this.paymentRepository.findOne({
             where: { id },
-            relations: ['installment']
+            relations: ['sale']
         });
 
         if (!payment) {
@@ -97,7 +71,7 @@ export class PaymentService {
     async getById(id: number): Promise<Payment | null> {
         const payment = await this.paymentRepository.findOne({
             where: { id },
-            relations: ['installment', 'installment.sale', 'installment.sale.customer'],
+            relations: ['sale', 'sale.customer'],
         });
         if (!payment) {
             throw new NotFoundException(`Pagamento de ID ${id} não encontrado`);
@@ -106,32 +80,12 @@ export class PaymentService {
     }
 
     async remove(id: number): Promise<void> {
-        const payment = await this.paymentRepository.findOne({
-            where: { id },
-            relations: ['installment']
-        });
+        const payment = await this.paymentRepository.findOneBy({ id });
 
         if (!payment) {
             throw new NotFoundException(`Pagamento de ID ${id} não encontrado`);
         }
 
-        const queryRunner = this.dataSource.createQueryRunner();
-        await queryRunner.connect();
-        await queryRunner.startTransaction();
-
-        try {
-            const installment = payment.installment;
-            installment.isPaid = false;
-
-            await queryRunner.manager.delete(Payment, id);
-            await queryRunner.manager.save(installment);
-
-            await queryRunner.commitTransaction();
-        } catch (error) {
-            await queryRunner.rollbackTransaction();
-            throw error;
-        } finally {
-            await queryRunner.release();
-        }
+        await this.paymentRepository.delete(id);
     }
 }

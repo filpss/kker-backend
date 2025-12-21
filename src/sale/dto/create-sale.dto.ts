@@ -1,7 +1,5 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { IsString, IsNotEmpty, IsDateString, IsNumber, IsArray, ValidateNested, IsOptional, ArrayMinSize } from 'class-validator';
-import { Type } from 'class-transformer';
-import { InstallmentDto } from './installment.dto';
+import { IsString, IsNotEmpty, IsDateString, IsNumber, IsOptional, Min } from 'class-validator';
 
 export class CreateSaleDto {
     @ApiProperty({
@@ -37,19 +35,12 @@ export class CreateSaleDto {
     saleDate: Date;
 
     @ApiPropertyOptional({
-        description: 'Lista de parcelas. Se não informado, será criada 1 parcela à vista com o valor total e vencimento na data da venda',
-        type: [InstallmentDto],
-        example: [
-            { value: 80, dueDate: '2025-01-15' },
-            { value: 60, dueDate: '2025-02-15' },
-            { value: 60, dueDate: '2025-03-15' },
-            { value: 50, dueDate: '2025-04-15' }
-        ]
+        description: 'Quantidade de parcelas combinadas com o cliente (apenas informativo). Se não informado, será 1 (à vista)',
+        example: 4,
+        default: 1
     })
     @IsOptional()
-    @IsArray()
-    @ValidateNested({ each: true })
-    @ArrayMinSize(1)
-    @Type(() => InstallmentDto)
-    installments?: InstallmentDto[];
+    @IsNumber()
+    @Min(1)
+    installmentsCount?: number;
 }

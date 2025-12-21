@@ -7,7 +7,6 @@ import { ConfigModule } from '@nestjs/config';
 import { SaleModule } from './sale/sale.module';
 import { PaymentModule } from './payment/payment.module';
 import { Sale } from './sale/sale.entity';
-import { Installment } from './sale/installment.entity';
 import { Payment } from './payment/payment.entity';
 import { BillingModule } from './billing/billing.module';
 import { ReportModule } from './report/report.module';
@@ -27,7 +26,6 @@ import { ReportModule } from './report/report.module';
       entities: [
         Customer,
         Sale,
-        Installment,
         Payment
       ],
       synchronize: true,

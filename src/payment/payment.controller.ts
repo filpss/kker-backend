@@ -17,10 +17,9 @@ export class PaymentController {
     }
 
     @Post()
-    @ApiOperation({ summary: 'Registra um pagamento para uma parcela' })
+    @ApiOperation({ summary: 'Registra um pagamento para uma venda' })
     @ApiResponse({ status: 201, description: 'Pagamento registrado com sucesso' })
-    @ApiResponse({ status: 400, description: 'Parcela já foi paga' })
-    @ApiResponse({ status: 404, description: 'Parcela não encontrada' })
+    @ApiResponse({ status: 404, description: 'Venda não encontrada' })
     create(@Body() paymentDto: PaymentDto): Promise<Payment> {
         return this.paymentService.create(paymentDto);
     }
@@ -41,7 +40,7 @@ export class PaymentController {
 
     @Delete(':id')
     @HttpCode(HttpStatus.NO_CONTENT)
-    @ApiOperation({ summary: 'Remove um pagamento (volta a parcela para não paga)' })
+    @ApiOperation({ summary: 'Remove um pagamento' })
     @ApiParam({ name: 'id', description: 'ID do pagamento' })
     @ApiResponse({ status: 204, description: 'Pagamento removido com sucesso' })
     remove(@Param('id', ParseIntPipe) id: number): Promise<void> {

@@ -3,12 +3,12 @@ import { IsString, IsNotEmpty, IsDateString, IsNumber, IsOptional } from 'class-
 
 export class PaymentDto {
     @ApiProperty({
-        description: 'O ID da parcela que está sendo paga',
+        description: 'O ID da venda',
         example: 1
     })
     @IsNumber()
     @IsNotEmpty()
-    idInstallment: number;
+    idSale: number;
 
     @ApiProperty({
         description: 'O valor do pagamento',

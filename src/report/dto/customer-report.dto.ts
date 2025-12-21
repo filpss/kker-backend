@@ -1,22 +1,11 @@
-export interface InstallmentReportItem {
-    id: number;
-    installmentNumber: number;
-    value: number;
-    dueDate: Date;
-    isPaid: boolean;
-    paymentDate: Date | null;
-    paymentValue: number | null;
-}
-
 export interface SaleReportItem {
     id: number;
     description: string;
     value: number;
     saleDate: Date;
     installmentsCount: number;
-    paidInstallments: number;
     totalPaid: number;
-    installments: InstallmentReportItem[];
+    paymentsCount: number;
 }
 
 export interface PaymentReportItem {
@@ -25,8 +14,6 @@ export interface PaymentReportItem {
     value: number;
     paymentDate: Date;
     saleDescription: string;
-    installmentNumber: number;
-    installmentsTotal: number;
 }
 
 export interface FinancialSummary {
@@ -35,9 +22,6 @@ export interface FinancialSummary {
     outstandingBalance: number;
     salesCount: number;
     paymentsCount: number;
-    totalInstallments: number;
-    paidInstallments: number;
-    pendingInstallments: number;
 }
 
 export interface CustomerReportData {

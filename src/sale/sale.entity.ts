@@ -1,6 +1,6 @@
 import { Entity, Column, PrimaryGeneratedColumn, CreateDateColumn, JoinColumn, ManyToOne, OneToMany } from 'typeorm';
 import { Customer } from '../customer/customer.entity';
-import { Installment } from './installment.entity';
+import { Payment } from '../payment/payment.entity';
 
 @Entity({ name: 'sales' })
 export class Sale {
@@ -11,8 +11,8 @@ export class Sale {
     @JoinColumn({ name: 'customer_id' })
     customer: Customer;
 
-    @OneToMany(() => Installment, (installment) => installment.sale)
-    installments: Installment[];
+    @OneToMany(() => Payment, (payment) => payment.sale)
+    payments: Payment[];
 
     @Column({ name: 'sale_value', type: 'decimal', precision: 10, scale: 2 })
     value: number;

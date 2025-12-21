@@ -6,8 +6,7 @@ import {
     CustomerReportData,
     FinancialSummary,
     SaleReportItem,
-    PaymentReportItem,
-    InstallmentReportItem
+    PaymentReportItem
 } from './dto/customer-report.dto';
 
 @Injectable()
@@ -42,7 +41,7 @@ export class ReportService {
     private async fetchCustomerWithRelations(customerId: number): Promise<Customer> {
         const customer = await this.customerRepository.findOne({
             where: { id: customerId },
-            relations: ['sales', 'sales.installments', 'sales.installments.payment']
+            relations: ['sales', 'sales.payments']
         });
 
         if (!customer) {
@@ -59,11 +58,8 @@ export class ReportService {
 
         return customer.sales
             .map(sale => {
-                const installments = sale.installments || [];
-                const paidInstallments = installments.filter(i => i.isPaid).length;
-                const totalPaid = installments
-                    .filter(i => i.payment)
-                    .reduce((sum, i) => sum + Number(i.payment?.value || 0), 0);
+                const payments = sale.payments || [];
+                const totalPaid = payments.reduce((sum, p) => sum + Number(p.value), 0);
 
                 return {
                     id: sale.id,
@@ -71,26 +67,11 @@ export class ReportService {
                     value: Number(sale.value),
                     saleDate: sale.saleDate,
                     installmentsCount: sale.installmentsCount,
-                    paidInstallments,
                     totalPaid,
-                    installments: this.mapInstallments(installments)
+                    paymentsCount: payments.length
                 };
             })
             .sort((a, b) => new Date(b.saleDate).getTime() - new Date(a.saleDate).getTime());
-    }
-
-    private mapInstallments(installments: any[]): InstallmentReportItem[] {
-        return installments
-            .map(inst => ({
-                id: inst.id,
-                installmentNumber: inst.installmentNumber,
-                value: Number(inst.value),
-                dueDate: inst.dueDate,
-                isPaid: inst.isPaid,
-                paymentDate: inst.payment?.paymentDate || null,
-                paymentValue: inst.payment ? Number(inst.payment.value) : null
-            }))
-            .sort((a, b) => a.installmentNumber - b.installmentNumber);
     }
 
     private mapPaymentsHistory(customer: Customer): PaymentReportItem[] {
@@ -101,19 +82,15 @@ export class ReportService {
         const allPayments: PaymentReportItem[] = [];
 
         for (const sale of customer.sales) {
-            if (sale.installments && sale.installments.length > 0) {
-                for (const installment of sale.installments) {
-                    if (installment.payment) {
-                        allPayments.push({
-                            id: installment.payment.id,
-                            description: installment.payment.description || '-',
-                            value: Number(installment.payment.value),
-                            paymentDate: installment.payment.paymentDate,
-                            saleDescription: sale.description || `Venda #${sale.id}`,
-                            installmentNumber: installment.installmentNumber,
-                            installmentsTotal: sale.installmentsCount
-                        });
-                    }
+            if (sale.payments && sale.payments.length > 0) {
+                for (const payment of sale.payments) {
+                    allPayments.push({
+                        id: payment.id,
+                        description: payment.description || '-',
+                        value: Number(payment.value),
+                        paymentDate: payment.paymentDate,
+                        saleDescription: sale.description || `Venda #${sale.id}`
+                    });
                 }
             }
         }
@@ -126,31 +103,23 @@ export class ReportService {
     private calculateFinancialSummary(customer: Customer): FinancialSummary {
         const sales = customer.sales || [];
 
-        let totalInstallments = 0;
-        let paidInstallments = 0;
         let totalPaid = 0;
+        let paymentsCount = 0;
 
         for (const sale of sales) {
-            const installments = sale.installments || [];
-            totalInstallments += installments.length;
-            paidInstallments += installments.filter(i => i.isPaid).length;
-            totalPaid += installments
-                .filter(i => i.payment)
-                .reduce((sum, i) => sum + Number(i.payment?.value || 0), 0);
+            const payments = sale.payments || [];
+            paymentsCount += payments.length;
+            totalPaid += payments.reduce((sum, p) => sum + Number(p.value), 0);
         }
 
         const totalSpent = sales.reduce((sum, sale) => sum + Number(sale.value), 0);
-        const paymentsCount = paidInstallments;
 
         return {
             totalSpent,
             totalPaid,
             outstandingBalance: Math.max(0, totalSpent - totalPaid),
             salesCount: sales.length,
-            paymentsCount,
-            totalInstallments,
-            paidInstallments,
-            pendingInstallments: totalInstallments - paidInstallments
+            paymentsCount
         };
     }
 }
