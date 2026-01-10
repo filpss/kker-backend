@@ -3,13 +3,14 @@ import { CustomerService } from './customer.service';
 import { CreateCustomerDto } from './dto/create-customer.dto';
 import { Customer } from './customer.entity';
 import { EditCustomerDto } from './dto/edit-customer.dto';
+import {CustomerDto} from "./dto/customer.dto";
 
 @Controller('customer')
 export class CustomerController {
     constructor(private customerService: CustomerService) { };
 
     @Get()
-    get(): Promise<Customer[]> {
+    findAll(): Promise<CustomerDto[]> {
         return this.customerService.findAll();
     }
 
